@@ -24,29 +24,30 @@ app.get('/canonize', (reg, res) => {
   //  res.send('Hello World')
 });
 
-const baseUrl = 'http://pokeapi.co/api/v2/';
-app.get('/', async (reg, res) => {
+const baseUrl = 'http://pokeapi.co/api/v2';
 
-  const response = await fetch(`${baseUrl}pokemon`)
+async function getPokemons(url) {
+  console.log('getPokemons', url);
+  const response = await fetch(url);
   //console.log(response);
-  const pokemons = await response.json();
+  const page = await response.json();
+  const pokemons = page.results;
+  return pokemons;
+}
 
-    // .then(function(response) {
-    //     if (response.status >= 400) {
-    //         throw new Error("Bad response from server");
-    //     }
-    //     return response.json();
-    // })
-    // .then(function(stories) {
-    //     console.log(stories);
-    // });
-
-   // console.log(reg.query);
-
-  return res.json({
-    qwe: 123,
-    pokemons,
-  });
+app.get('/', async (reg, res) => {
+  try {
+    const pakemonsUrl = `${baseUrl}/pokemon`;
+    const pokemons = await getPokemons(pakemonsUrl);
+    console.log(pokemons);
+    return res.json({
+      qwe: 123,
+      pokemons,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.json({ err });
+  }
   //  res.send('Hello World')
 });
 
