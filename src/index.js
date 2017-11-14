@@ -13,6 +13,8 @@ import express from 'express';
 import fetch from 'isomorphic-fetch';
 import canonize from './canonize';
 
+const __DEV__ = true;
+
 const app = express();
 app.get('/canonize', (reg, res) => {
    // console.log(reg.query);
@@ -26,12 +28,22 @@ app.get('/canonize', (reg, res) => {
 
 const baseUrl = 'http://pokeapi.co/api/v2';
 
-async function getPokemons(url) {
-  console.log('getPokemons', url);
+async function getPokemons(url, i = 0) {
+  console.log('getPokemons', url, i);
   const response = await fetch(url);
   //console.log(response);
   const page = await response.json();
   const pokemons = page.results;
+  if (__DEV__ && i > 3) {
+    return pokemons;
+  }
+  if (page.next) {
+    const pokemons2 = await getPokemons(page.next, i + 1);
+    return [
+      ...pokemons,
+      ...pokemons2,
+    ];
+  }
   return pokemons;
 }
 
