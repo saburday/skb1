@@ -11,7 +11,10 @@ export Greeting from './Greeting.js';
 */
 import express from 'express';
 import fetch from 'isomorphic-fetch';
+import Promise from 'bluebird';
+import _ from 'lodash';
 import canonize from './canonize';
+
 
 const __DEV__ = true;
 
@@ -27,14 +30,15 @@ app.get('/canonize', (reg, res) => {
 });
 
 const baseUrl = 'http://pokeapi.co/api/v2';
+const pokemonFields = ['id', 'name', 'base_experience', 'height', 'is_default', 'order', 'weight'];
 
 async function getPokemons(url, i = 0) {
   console.log('getPokemons', url, i);
   const response = await fetch(url);
-  //console.log(response);
+  // console.log(response);
   const page = await response.json();
   const pokemons = page.results;
-  if (__DEV__ && i > 3) {
+  if (__DEV__ && i > 1) {
     return pokemons;
   }
   if (page.next) {
@@ -47,14 +51,35 @@ async function getPokemons(url, i = 0) {
   return pokemons;
 }
 
+async function getPokemon(url) {
+  console.log('getPokemon ', url);
+  const response = await fetch(url);
+  const pokemon = await response.json();
+  return pokemon;
+  //console.log(pokemon.weight);
+}
+
+//console.log(getPokemon(1));
+
 app.get('/', async (reg, res) => {
   try {
-    const pakemonsUrl = `${baseUrl}/pokemon`;
-    const pokemons = await getPokemons(pakemonsUrl);
-    console.log(pokemons);
+    const pokemonsUrl = `${baseUrl}/pokemon`;
+    const pokemonsInfo = await getPokemons(pokemonsUrl);
+    const pokemonsPromises = pokemonsInfo.slice(0, 2).map(info => {
+      return getPokemon(info.url)
+    });
+    //console.log(pokemons);
+
+    const pokemonsFull = await Promise.all(pokemonsPromises);
+    const pokemons = pokemonsFull.map((pokemon) => {
+      return _.pick(pokemon, pokemonFields);
+      //return getPokemon(info.url)
+    });
+    const sortPokemons = _.sortBy(pokemons, pokemon => pokemon.weight);
+
     return res.json({
       qwe: 123,
-      pokemons,
+      sortPokemons,
     });
   } catch (err) {
     console.log(err);
